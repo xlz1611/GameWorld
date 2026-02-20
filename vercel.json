@@ -1,8 +1,9 @@
 {
-  "installCommand": "npm install",
-  "buildCommand": "next build",
-  "framework": "nextjs",
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next@3.2.0"
+    }
+  ]
 }
