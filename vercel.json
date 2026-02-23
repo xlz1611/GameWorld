@@ -1,0 +1,16 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "regions": ["hkg1"],
+  "env": {
+    "NEXT_PUBLIC_APP_NAME": "GameHub",
+    "NEXT_PUBLIC_ENABLE_ANALYTICS": "false",
+    "NEXT_PUBLIC_ENABLE_ERROR_REPORTING": "true",
+    "NEXT_PUBLIC_IMAGE_QUALITY": "80",
+    "CACHE_TTL": "300",
+    "CACHE_MAX_SIZE": "100",
+    "MAX_FILE_SIZE": "104857600",
+    "ALLOWED_FILE_TYPES": ".apk,.zip"
+  }
+}
