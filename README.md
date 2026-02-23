@@ -1,116 +1,126 @@
-# 安卓游戏下载站
+# GameHub - 安卓游戏下载网站
 
-一个基于 Next.js + Tailwind CSS + Prisma 的安卓游戏下载网站，包含前端用户浏览和后端管理功能。
+一个现代化、高性能的安卓游戏下载网站，使用 Next.js、React 和 Tailwind CSS 构建。
 
-## ✨ 功能特性
+## 功能特性
 
-### 前端用户端
-- 🎮 游戏列表展示
-- 🔍 实时搜索功能
-- 📱 游戏详情页
-- 📥 一键下载APK
+- 🎮 游戏列表展示，支持分类筛选和搜索
+- 🔍 智能搜索功能，带搜索历史记录
+- ⭐ 游戏收藏和下载历史管理
+- 📱 响应式设计，适配移动端和桌面端
+- 🎨 现代化 UI 设计，带有流畅的动画和过渡效果
+- ⚡ 高性能优化，包括代码分割和图片优化
+- 🔒 安全防护，包括 XSS 攻击防护
+- ♿ 可访问性支持，包括 ARIA 标签和键盘导航
+- 📊 用户评论和评分系统
 
-### 后端管理端
-- 📊 游戏管理仪表盘
-- 📤 游戏上传功能
-- ✏️ 游戏信息编辑
-- 🚀 一键上下架
-- 🗑️ 游戏删除功能
+## 技术栈
 
-## 🛠 技术栈
+- **前端框架**: Next.js (App Router)
+- **UI 库**: React
+- **样式**: Tailwind CSS
+- **图标**: Lucide React
+- **状态管理**: React Hooks (useState, useEffect, useCallback, useMemo)
+- **数据存储**: LocalStorage (客户端缓存)
+- **API**: 自定义 Next.js API 路由
 
-- **前端**: Next.js 14 (App Router) + Tailwind CSS
-- **后端**: Node.js + Prisma
-- **数据库**: SQLite
-- **UI组件**: Lucide React 图标库
-
-## 📦 快速开始
-
-### 1. 安装依赖
-```bash
-npm install
-```
-
-### 2. 初始化数据库
-```bash
-npx prisma migrate dev --name init
-```
-
-### 3. 开发模式
-```bash
-npm run dev
-# 访问 http://localhost:3000
-```
-
-### 4. 生产构建
-```bash
-npm run build
-```
-
-### 5. 启动生产服务器
-```bash
-npm run start
-# 或双击 start.bat 文件
-```
-
-## 📁 项目结构
+## 项目结构
 
 ```
 ├── app/
-│   ├── api/           # API 路由
-│   ├── admin/         # 管理端页面
-│   ├── games/         # 游戏详情页
-│   ├── globals.css    # 全局样式
-│   ├── layout.js      # 根布局
-│   └── page.js        # 首页
-├── prisma/            # Prisma 配置
-├── public/            # 静态资源
-│   └── uploads/       # 上传文件
-├── package.json       # 项目配置
-├── tailwind.config.js # Tailwind 配置
-└── start.bat          # 快速启动脚本
+│   ├── api/             # API 路由
+│   ├── components/       # 可复用组件
+│   │   ├── layout/       # 布局组件
+│   │   ├── ui/           # UI 组件
+│   │   └── features/     # 功能组件
+│   ├── games/            # 游戏详情页面
+│   ├── ranking/          # 排行榜页面
+│   ├── settings/         # 设置页面
+│   ├── globals.css       # 全局样式
+│   ├── layout.js         # 根布局
+│   └── page.js           # 首页
+├── prisma/              # Prisma ORM
+├── public/              # 静态资源
+├── .gitignore           # Git 忽略文件
+├── package.json         # 项目配置
+├── tailwind.config.js   # Tailwind 配置
+└── vercel.json          # Vercel 部署配置
 ```
 
-## 🎨 设计特色
+## 快速开始
 
-- 🚀 现代科技感 UI
-- 🌙 深色模式友好
-- 🔮 玻璃态设计
-- ✨ 流畅动画效果
-- 📱 响应式布局
+### 前提条件
 
-## 🌐 部署方案
+- Node.js 18.0 或更高版本
+- npm 或 yarn 包管理器
 
-### 本地部署
-1. 运行 `npm run build` 构建生产版本
-2. 运行 `npm run start` 启动服务器
+### 安装
 
-### 云服务器部署
-1. 上传构建后的文件到服务器
-2. 安装 Node.js 环境
-3. 运行 `npm run start` 启动服务
+1. 克隆项目仓库
 
-### 平台部署
-- **Vercel**: 官方推荐，支持一键部署
-- **Netlify**: 支持静态网站托管
-- **GitHub Pages**: 适合静态内容
+```bash
+git clone <repository-url>
+cd gamehub
+```
 
-## 📄 API 文档
+2. 安装依赖
 
-### 用户端 API
-- `GET /api/games` - 获取游戏列表
-- `GET /api/games/[id]` - 获取游戏详情
+```bash
+npm install
+# 或
+yarn install
+```
 
-### 管理端 API
-- `GET /api/admin/games` - 获取所有游戏
-- `POST /api/admin/upload` - 上传游戏
-- `PUT /api/admin/games/[id]/publish` - 更新游戏状态
-- `DELETE /api/admin/games/[id]` - 删除游戏
+3. 启动开发服务器
 
-## 🤝 贡献
+```bash
+npm run dev
+# 或
+yarn dev
+```
 
-欢迎提交 Issue 和 Pull Request！
+4. 打开浏览器访问
 
-## 📄 许可证
+```
+http://localhost:3000
+```
+
+## 构建与部署
+
+### 构建生产版本
+
+```bash
+npm run build
+# 或
+yarn build
+```
+
+### 部署到 Vercel
+
+1. 登录 Vercel 账户
+2. 导入项目仓库
+3. 配置构建命令和输出目录
+4. 点击部署
+
+## 主要组件
+
+### 布局组件
+- `Navbar` - 顶部导航栏，包含菜单和搜索功能
+- `Hero` - 首页英雄区域，包含网站标题和搜索框
+- `MobileNav` - 移动端底部导航栏
+
+### UI 组件
+- `GameCard` - 游戏卡片，显示游戏信息和操作按钮
+- `Pagination` - 分页控件，用于切换不同页码
+
+### 功能组件
+- `TrendingGames` - 热门游戏排行榜
+- `GameReviews` - 游戏评论和评分系统
+
+## 贡献
+
+欢迎贡献代码、提出问题和功能请求！请确保遵循项目的代码风格和提交规范。
+
+## 许可证
 
 MIT License

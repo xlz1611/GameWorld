@@ -1,47 +1,96 @@
 import './globals.css'
+import { ThemeProvider } from './lib/ThemeContext'
+import ToastContainer from './components/ui/Toast'
+import GlobalLoader from './components/ui/GlobalLoader'
+
+export const metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
+  title: {
+    default: 'GameHub - 安卓游戏下载平台',
+    template: '%s | GameHub'
+  },
+  description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。GameHub为您提供最好的游戏下载体验。',
+  keywords: ['安卓游戏', '游戏下载', '免费游戏', '手机游戏', 'Android游戏', '游戏平台'],
+  authors: [{ name: 'GameHub Team' }],
+  creator: 'GameHub',
+  publisher: 'GameHub',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'zh_CN',
+    url: '/',
+    siteName: 'GameHub',
+    title: 'GameHub - 安卓游戏下载平台',
+    description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'GameHub Logo'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GameHub - 安卓游戏下载平台',
+    description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。',
+    images: ['/og-image.png'],
+    creator: '@gamehub'
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'google-site-verification-code',
+    yandex: 'yandex-verification-code',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    shortcut: '/favicon-16x16.png',
+    apple: '/apple-touch-icon.png',
+  },
+  manifest: '/manifest.json',
+}
 
 const Layout = ({ children }) => {
   return (
     <html lang="zh-CN">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+      </head>
       <body>
-        <div className="min-h-screen flex flex-col">
-          <header className="glass sticky top-0 z-50 border-b border-white/10 backdrop-blur-xl">
-            <div className="container mx-auto px-6 py-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-emerald-600 rounded-xl flex items-center justify-center glow">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h1 className="text-2xl font-bold text-gradient">安卓游戏下载站</h1>
+        <ThemeProvider>
+          <GlobalLoader />
+          <ToastContainer />
+          <div className="min-h-screen flex flex-col">
+            <main className="flex-1">
+              {children}
+            </main>
+            <footer className="glass border-t border-white/10 mt-auto">
+              <div className="container mx-auto py-8 px-6">
+                <div className="text-center">
+                  <p className="text-muted text-sm">© 2026 GameHub. 保留所有权利.</p>
+                  <p className="text-muted/60 text-xs mt-2">打造最好的游戏下载体验</p>
                 </div>
-                <nav>
-                  <ul className="flex space-x-8">
-                    <li>
-                      <a href="/" className="text-foreground/80 hover:text-primary transition-colors duration-300 font-medium">首页</a>
-                    </li>
-                    <li>
-                      <a href="/admin" className="text-foreground/80 hover:text-primary transition-colors duration-300 font-medium">管理端</a>
-                    </li>
-                  </ul>
-                </nav>
               </div>
-            </div>
-          </header>
-          <main className="flex-1 container mx-auto py-12 px-6">
-            {children}
-          </main>
-          <footer className="glass border-t border-white/10 mt-auto">
-            <div className="container mx-auto py-8 px-6">
-              <div className="text-center">
-                <p className="text-foreground/60 text-sm">© 2026 安卓游戏下载站. 保留所有权利.</p>
-                <p className="text-foreground/40 text-xs mt-2">打造最好的游戏下载体验</p>
-              </div>
-            </div>
-          </footer>
-        </div>
+            </footer>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )
