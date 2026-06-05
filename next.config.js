@@ -65,8 +65,12 @@ const nextConfig = {
     serverExternalPackages: ['@vercel/blob', 'undici'],
   },
   webpack: (config, { isServer }) => {
-    // 外部化 undici，避免其现代 JS 语法导致 webpack 解析失败
+    // 客户端构建时完全排除 undici 和 @vercel/blob，避免现代 JS 语法解析失败
     if (!isServer) {
+      config.externals = [
+        ...(config.externals || []),
+        { 'undici': 'commonjs undici', '@vercel/blob': 'commonjs @vercel/blob' },
+      ]
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
