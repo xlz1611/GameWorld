@@ -1,6 +1,1 @@
-{
-  "buildCommand": "npx prisma db push --skip-generate && next build",
-  "installCommand": "npm install",
-  "framework": "nextjs",
-  "regions": ["hkg1"]
-}
+{"buildCommand": "npx prisma generate && npx prisma db push --skip-generate && next build", "installCommand": "npm install", "framework": "nextjs", "regions": ["hkg1"]}

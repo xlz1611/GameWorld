@@ -61,6 +61,8 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '500mb',
     },
+    // 外部化服务端包，避免 webpack 解析问题
+    serverExternalPackages: ['@vercel/blob', 'undici'],
   },
   webpack: (config) => {
     config.watchOptions = {
