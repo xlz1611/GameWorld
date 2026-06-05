@@ -64,7 +64,16 @@ const nextConfig = {
     // 外部化服务端包，避免 webpack 解析问题
     serverExternalPackages: ['@vercel/blob', 'undici'],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    // 外部化 undici，避免其现代 JS 语法导致 webpack 解析失败
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      }
+    }
     config.watchOptions = {
       poll: 1000,
       aggregateTimeout: 300,

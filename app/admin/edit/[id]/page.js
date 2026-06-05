@@ -68,19 +68,55 @@ const EditGame = ({ params }) => {
   }
 
   const uploadToBlob = async (file, pathname) => {
-    const { upload } = await import('@vercel/blob/client')
     const token = localStorage.getItem('token')
 
-    const blob = await upload(pathname, file, {
-      access: 'public',
-      handleUploadUrl: '/api/admin/upload/url',
-      clientPayload: JSON.stringify({ token }),
-      onUploadProgress: (progress) => {
-        setUploadProgress(progress)
+    // 步骤1: 从服务端获取上传URL
+    const urlResponse = await fetch('/api/admin/upload/url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
+      body: JSON.stringify({
+        pathname,
+        contentType: file.type,
+        size: file.size,
+        clientPayload: JSON.stringify({ token }),
+      })
     })
 
-    return blob.url
+    if (!urlResponse.ok) {
+      const errorData = await urlResponse.json()
+      throw new Error(errorData.error || '获取上传地址失败')
+    }
+
+    const uploadInfo = await urlResponse.json()
+
+    // 步骤2: 直接 PUT 上传文件到 Blob 存储
+    const xhr = new XMLHttpRequest()
+
+    return new Promise((resolve, reject) => {
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100)
+          setUploadProgress(progress)
+        }
+      })
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const location = xhr.getResponseHeader('location')
+          resolve(location || uploadInfo.url)
+        } else {
+          reject(new Error(`上传失败: HTTP ${xhr.status}`))
+        }
+      })
+
+      xhr.addEventListener('error', () => reject(new Error('网络错误')))
+      xhr.open('PUT', uploadInfo.url, true)
+      xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream')
+      xhr.send(file)
+    })
   }
 
   const handleSubmit = async (e) => {
