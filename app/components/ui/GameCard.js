@@ -1,134 +1,115 @@
-import Link from 'next/link'
-import Image from 'next/image'
-import { Heart, HeartOff, Download, Star, Gamepad2 } from 'lucide-react'
-import OptimizedImage from './OptimizedImage'
+'use client'
 
-/**
- * 游戏卡片组件
- * 用于在游戏列表中显示单个游戏的信息和操作按钮
- * 
- * @param {Object} game - 游戏数据对象
- * @param {string} game.id - 游戏ID
- * @param {string} game.name - 游戏名称
- * @param {string} game.iconUrl - 游戏图标URL
- * @param {string} game.category - 游戏分类
- * @param {string} game.version - 游戏版本
- * @param {string} game.fileSize - 游戏文件大小
- * @param {number} index - 游戏在列表中的索引，用于动画延迟
- * @param {Function} isFavorite - 检查游戏是否已收藏的函数
- * @param {Function} toggleFavorite - 切换游戏收藏状态的函数
- * @param {Function} addToDownloadHistory - 添加游戏到下载历史的函数
- * @returns {JSX.Element} 游戏卡片组件
- */
+import { useState } from 'react'
+import Link from 'next/link'
+import { Heart, HeartOff, Download, Star, Gamepad2 } from 'lucide-react'
+
 const GameCard = ({ game, index, isFavorite, toggleFavorite, addToDownloadHistory }) => {
-  // 确保游戏数据完整
+  const [tip, setTip] = useState('')
+
   if (!game || typeof game !== 'object') {
     return null
   }
 
-  const showToast = (message, type = 'success') => {
-    if (typeof window !== 'undefined' && window.showToast) {
-      window.showToast(message, type)
-    }
+  const { id, name = '未知游戏', iconUrl = '', category = '其他', version = '1.0.0', fileSize = '未知大小', rating = 0, downloadCount = 0 } = game
+
+  if (!id) {
+    return null
+  }
+
+  const showTip = (message) => {
+    setTip(message)
+    setTimeout(() => setTip(''), 2000)
   }
 
   const handleFavorite = (e) => {
     e.preventDefault()
     e.stopPropagation()
     if (toggleFavorite) {
-      toggleFavorite(game.id)
-      const isFav = isFavorite && isFavorite(game.id)
-      showToast(isFav ? '已取消收藏' : '已添加到收藏', 'success')
+      const wasFavorite = isFavorite && isFavorite(id)
+      toggleFavorite(id)
+      showTip(wasFavorite ? '已取消收藏' : '已添加到收藏')
     }
   }
 
   const handleDownload = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (addToDownloadHistory) {
-      addToDownloadHistory(game)
-      showToast('开始下载游戏', 'info')
-    }
+    window.location.href = `/games/${id}`
   }
 
-  const { id, name = '未知游戏', iconUrl = '', category = '其他', version = '1.0.0', fileSize = '未知大小' } = game
-
-  // 处理无效的游戏ID
-  if (!id) {
-    return null
-  }
+  const favorited = isFavorite && isFavorite(id)
 
   return (
-    <Link 
-      key={id} 
-      href={`/games/${id}`} 
-      className="glow-card stagger-enter focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A]"
+    <Link
+      key={id}
+      href={`/games/${id}`}
+      className="bg-[#2a2d31] border border-[#444] rounded-md overflow-hidden hover:border-brand transition-colors stagger-enter focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A] relative"
       style={{ animationDelay: `${index * 0.1}s` }}
       aria-label={`查看游戏 ${name} 的详情`}
     >
-      <div className="flex flex-col">
-        <div className="relative mb-4 overflow-hidden rounded-xl">
-          <div className="aspect-square bg-[#0F172A] relative">
-            {iconUrl ? (
-              <OptimizedImage 
-                src={iconUrl} 
-                alt={name} 
-                fill
-                loading={index < 3 ? "eager" : "lazy"}
-                priority={index < 3}
-                sizes="(max-width: 640px) 100px, (max-width: 1024px) 120px, 150px"
-                quality={80}
-              />
-            ) : (
-              <div className="w-full h-full bg-[#1E293B] flex items-center justify-center">
-                <Gamepad2 className="w-12 h-12 text-muted" aria-hidden="true" />
-              </div>
-            )}
-          </div>
-          <div className="absolute top-3 right-3 bg-brand text-[#0F172A] px-3 py-1 rounded-full text-xs font-bold">
-            {category}
-          </div>
+      {tip && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-black/80 text-white text-xs px-3 py-1.5 rounded-full whitespace-nowrap animate-fade-in pointer-events-none">
+          {tip}
         </div>
-        
-        <h3 className="text-lg font-bold mb-2 text-white line-clamp-1">{name}</h3>
-        
-        <div className="flex items-center justify-between mb-3 text-sm">
+      )}
+
+      <div className="aspect-video bg-[#171a21] relative overflow-hidden">
+        {iconUrl ? (
+          <img
+            src={iconUrl}
+            alt={name}
+            className="w-full h-full object-cover"
+            loading={index < 3 ? "eager" : "lazy"}
+          />
+        ) : (
+          <div className="w-full h-full bg-[#171a21] flex items-center justify-center">
+            <Gamepad2 className="w-12 h-12 text-muted" aria-hidden="true" />
+          </div>
+        )}
+        <div className="absolute top-2 right-2 bg-[#171a21] text-white px-2 py-1 rounded text-xs font-semibold">
+          {category}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <h3 className="text-white font-semibold mb-2 line-clamp-1">{name}</h3>
+
+        <div className="flex items-center space-x-2 mb-3">
           <div className="flex items-center space-x-1">
-            <Star className="w-4 h-4 text-brand fill-brand" strokeWidth={1.5} aria-hidden="true" />
-            <span className="font-semibold text-white">4.5</span>
+            <Star className={`w-4 h-4 ${rating > 0 ? 'text-yellow-500 fill-yellow-500' : 'text-gray-500'}`} strokeWidth={1.5} aria-hidden="true" />
+            <span className="text-white text-sm font-semibold">{rating > 0 ? rating.toFixed(1) : '暂无'}</span>
           </div>
-          <span className="text-muted text-xs">{version}</span>
+          <span className="text-gray-400 text-xs">{fileSize}</span>
+          {downloadCount > 0 && (
+            <span className="text-gray-400 text-xs">{downloadCount >= 10000 ? `${(downloadCount / 10000).toFixed(1)}万` : downloadCount}次下载</span>
+          )}
         </div>
-        
-        <div className="flex items-center justify-between text-sm text-muted mb-4">
-          <span className="text-xs">{fileSize}</span>
-          <span className="text-brand font-semibold text-xs">免费</span>
-        </div>
-        
+
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={handleFavorite}
-            className={`flex-1 py-2 rounded-lg transition-colors ${isFavorite && isFavorite(id) ? 'bg-brand text-[#0F172A]' : 'bg-[#1E293B] border border-[#334155] text-white hover:bg-[#0F172A]'} focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A]`}
-            aria-label={isFavorite && isFavorite(id) ? `取消收藏游戏 ${name}` : `收藏游戏 ${name}`}
+            className={`flex-1 py-2 rounded-md transition-colors ${favorited ? 'bg-brand text-[#0F172A]' : 'bg-[#171a21] border border-[#444] text-white hover:bg-[#2a475e]'} focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A] text-sm`}
+            aria-label={favorited ? `取消收藏游戏 ${name}` : `收藏游戏 ${name}`}
           >
-            {isFavorite && isFavorite(id) ? (
+            {favorited ? (
               <>
-                <Heart className="w-4 h-4 mr-2 fill-current" strokeWidth={1.5} aria-hidden="true" />
+                <Heart className="w-4 h-4 mr-1 fill-current" strokeWidth={1.5} aria-hidden="true" />
                 <span>已收藏</span>
               </>
             ) : (
               <>
-                <HeartOff className="w-4 h-4 mr-2" strokeWidth={1.5} aria-hidden="true" />
+                <HeartOff className="w-4 h-4 mr-1" strokeWidth={1.5} aria-hidden="true" />
                 <span>收藏</span>
               </>
             )}
           </button>
-          <button 
+          <button
             onClick={handleDownload}
-            className="flex-1 download-btn flex items-center justify-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A]"
-            aria-label={`下载游戏 ${name}`}
+            className="flex-1 bg-brand hover:bg-brand-hover text-[#0F172A] font-semibold py-2 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-[#0F172A] text-sm"
+            aria-label={`查看游戏 ${name} 详情`}
           >
-            <Download className="w-4 h-4" strokeWidth={1.5} aria-hidden="true" />
+            <Download className="w-4 h-4 mr-1 inline" strokeWidth={1.5} aria-hidden="true" />
             <span>下载</span>
           </button>
         </div>

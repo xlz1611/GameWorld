@@ -1,6 +1,12 @@
 import prisma from '../../lib/prisma'
+import { verifyAdmin, adminResponse } from '../../lib/adminAuth'
 
-export async function GET() {
+export async function GET(request) {
+  const auth = await verifyAdmin(request)
+  if (!auth.verified) {
+    return adminResponse(auth.error, auth.status)
+  }
+
   try {
     const games = await prisma.game.findMany({
       orderBy: {

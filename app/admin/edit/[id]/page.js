@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Save, AlertCircle, CheckCircle, Gamepad2, Package, Calendar, Shield, Upload } from 'lucide-react'
+import { Save, AlertCircle, CheckCircle, Gamepad2, Package, Calendar, Shield, Upload } from 'lucide-react'
+import { useUser } from '../../../lib/UserContext'
 
 const EditGame = ({ params }) => {
   const { id } = params
+  const { getAuthHeaders } = useUser()
   const [game, setGame] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -20,10 +22,18 @@ const EditGame = ({ params }) => {
     fileSize: ''
   })
 
+  const [newApkFile, setNewApkFile] = useState(null)
+  const [newIconFile, setNewIconFile] = useState(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStep, setUploadStep] = useState('')
+
   useEffect(() => {
     const fetchGame = async () => {
       try {
-        const res = await fetch(`/api/admin/games/${id}`)
+        const res = await fetch(`/api/admin/games/${id}`, {
+          headers: getAuthHeaders()
+        })
         if (res.ok) {
           const data = await res.json()
           setGame(data)
@@ -57,28 +67,85 @@ const EditGame = ({ params }) => {
     }))
   }
 
+  const uploadToBlob = async (file, pathname) => {
+    const { upload } = await import('@vercel/blob/client')
+    const token = localStorage.getItem('token')
+
+    const blob = await upload(pathname, file, {
+      access: 'public',
+      handleUploadUrl: '/api/admin/upload/url',
+      clientPayload: JSON.stringify({ token }),
+      onUploadProgress: (progress) => {
+        setUploadProgress(progress)
+      },
+    })
+
+    return blob.url
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setIsUploading(true)
+    setUploadProgress(0)
+    setError('')
 
     try {
+      let iconUrl = null
+      let apkUrl = null
+
+      // 上传新图标（如果选择了）
+      if (newIconFile) {
+        setUploadStep('icon')
+        const iconExt = newIconFile.name.split('.').pop()
+        const iconPath = `icons/${Date.now()}_icon.${iconExt}`
+        iconUrl = await uploadToBlob(newIconFile, iconPath)
+      }
+
+      // 上传新APK（如果选择了）
+      if (newApkFile) {
+        setUploadStep('apk')
+        setUploadProgress(0)
+        const apkExt = newApkFile.name.split('.').pop()
+        const apkPath = `games/${Date.now()}_game.${apkExt}`
+        apkUrl = await uploadToBlob(newApkFile, apkPath)
+      }
+
+      // 提交更新
+      setUploadStep('saving')
+      const submitData = {
+        ...formData,
+        isPublished: game.isPublished
+      }
+
+      if (iconUrl) submitData.iconUrl = iconUrl
+      if (apkUrl) submitData.apkUrl = apkUrl
+
       const res = await fetch(`/api/admin/games/${id}`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       })
 
       if (res.ok) {
+        const updatedGame = await res.json()
+        setGame(updatedGame)
         setSuccess('游戏信息更新成功！')
-        // 清除成功消息
+        setNewApkFile(null)
+        setNewIconFile(null)
         setTimeout(() => setSuccess(''), 3000)
       } else {
         setError('更新失败，请重试')
       }
     } catch (error) {
       console.error('更新失败:', error)
-      setError('更新失败，请重试')
+      setError('更新失败: ' + error.message)
+    } finally {
+      setIsUploading(false)
+      setUploadStep('')
+      setUploadProgress(0)
     }
   }
 
@@ -96,21 +163,12 @@ const EditGame = ({ params }) => {
         <AlertCircle className="w-24 h-24 mx-auto mb-6 text-red-500/30" />
         <p className="text-foreground/60 text-2xl font-semibold mb-3">获取游戏信息失败</p>
         <p className="text-foreground/40 text-lg mb-8">{error || '游戏不存在'}</p>
-        <Link href="/admin" className="btn btn-primary inline-flex items-center space-x-3">
-          <ArrowLeft className="h-5 w-5" />
-          <span>返回仪表盘</span>
-        </Link>
       </div>
     )
   }
 
   return (
     <div className="relative z-10">
-      <Link href="/admin" className="inline-flex items-center text-primary hover:text-primary-hover transition-colors mb-10 font-semibold text-lg group">
-        <ArrowLeft className="h-6 w-6 mr-2 group-hover:-translate-x-1 transition-transform" />
-        返回仪表盘
-      </Link>
-
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-primary-hover rounded-3xl mb-8 glow">
@@ -232,17 +290,65 @@ const EditGame = ({ params }) => {
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-3 text-foreground/80">更换图标（可选）</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="input w-full"
+                onChange={(e) => setNewIconFile(e.target.files[0] || null)}
+              />
+              {game.iconUrl && !newIconFile && (
+                <p className="mt-2 text-xs text-foreground/40">当前图标已设置，选择新文件将替换</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-3 text-foreground/80">更换APK（可选）</label>
+              <input
+                type="file"
+                accept=".apk"
+                className="input w-full"
+                onChange={(e) => setNewApkFile(e.target.files[0] || null)}
+              />
+              {game.apkUrl && !newApkFile && (
+                <p className="mt-2 text-xs text-foreground/40">当前APK已设置，选择新文件将替换</p>
+              )}
+            </div>
           </div>
 
           <div className="mt-12 flex space-x-6">
             <Link href="/admin" className="btn btn-secondary">
               取消
             </Link>
-            <button type="submit" className="btn btn-primary flex items-center space-x-3 glow">
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="btn btn-primary flex items-center space-x-3 glow disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               <Save className="h-6 w-6" />
-              <span>保存修改</span>
+              <span>{isUploading ? '保存中...' : '保存修改'}</span>
             </button>
           </div>
+
+          {isUploading && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white text-sm">
+                  {uploadStep === 'icon' ? '正在上传图标...' :
+                   uploadStep === 'apk' ? '正在上传APK...' : '正在保存...'}
+                </span>
+                <span className="text-brand text-sm font-semibold">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-[#334155] rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-brand h-3 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </form>
       </div>
     </div>

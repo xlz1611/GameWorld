@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { Flame, Star, Download, Gamepad2 } from 'lucide-react'
 import OptimizedImage from '../ui/OptimizedImage'
 
@@ -42,8 +41,8 @@ const TrendingGames = ({ games, isLoading }) => {
         </div>
       ) : safeGames.length === 0 ? (
         <div className="p-6 text-center rounded-xl bg-[#1E293B]">
-          <Gamepad2 className="w-12 h-12 text-muted mx-auto mb-4" />
-          <p className="text-muted text-sm">暂无热门游戏</p>
+          <Gamepad2 className="w-12 h-12 text-white mx-auto mb-4" />
+          <p className="text-white text-sm">暂无热门游戏</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -68,14 +67,11 @@ const TrendingGames = ({ games, isLoading }) => {
                         src={iconUrl} 
                         alt={name} 
                         fill
-                        loading={index < 2 ? "eager" : "lazy"}
-                        priority={index < 2}
-                        sizes="(max-width: 640px) 60px, (max-width: 1024px) 64px, 64px"
-                        quality={80}
+                        className="w-full h-full"
                       />
                     ) : (
                       <div className="w-full h-full bg-[#1E293B] flex items-center justify-center">
-                        <Gamepad2 className="w-8 h-8 text-muted" />
+                        <Gamepad2 className="w-8 h-8 text-white" />
                       </div>
                     )}
                   </div>
@@ -88,17 +84,17 @@ const TrendingGames = ({ games, isLoading }) => {
                   <h4 className="font-semibold text-white text-sm mb-1 truncate group-hover:text-brand transition-colors">
                     {name}
                   </h4>
-                  <div className="flex items-center gap-2 text-xs text-muted">
+                  <div className="flex items-center gap-2 text-xs text-white">
                     <div className="flex items-center gap-1">
                       <Star className="w-3 h-3 text-brand fill-brand" strokeWidth={1.5} />
-                      <span>4.5</span>
+                      <span>{game.rating || 0}</span>
                     </div>
                     <span>•</span>
                     <span>{category}</span>
                   </div>
                 </div>
 
-                <Download className="w-5 h-5 text-muted group-hover:text-brand transition-colors" strokeWidth={1.5} />
+                <Download className="w-5 h-5 text-white group-hover:text-brand transition-colors" strokeWidth={1.5} />
               </Link>
             )
           })}

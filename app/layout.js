@@ -1,19 +1,21 @@
 import './globals.css'
 import { ThemeProvider } from './lib/ThemeContext'
+import { UserProvider } from './lib/UserContext'
 import ToastContainer from './components/ui/Toast'
 import GlobalLoader from './components/ui/GlobalLoader'
+import AnnouncementBar from './components/features/AnnouncementBar'
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: {
-    default: 'GameHub - 安卓游戏下载平台',
-    template: '%s | GameHub'
+    default: '游戏世界 - GameWorld - 安卓游戏下载平台',
+    template: '%s | 游戏世界 | GameWorld'
   },
-  description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。GameHub为您提供最好的游戏下载体验。',
+  description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。游戏世界(GameWorld)为您提供最好的游戏下载体验。',
   keywords: ['安卓游戏', '游戏下载', '免费游戏', '手机游戏', 'Android游戏', '游戏平台'],
-  authors: [{ name: 'GameHub Team' }],
-  creator: 'GameHub',
-  publisher: 'GameHub',
+  authors: [{ name: '游戏世界团队' }],
+  creator: '游戏世界 GameWorld',
+  publisher: '游戏世界 GameWorld',
   formatDetection: {
     email: false,
     address: false,
@@ -23,24 +25,24 @@ export const metadata = {
     type: 'website',
     locale: 'zh_CN',
     url: '/',
-    siteName: 'GameHub',
-    title: 'GameHub - 安卓游戏下载平台',
+    siteName: '游戏世界 GameWorld',
+    title: '游戏世界 - GameWorld - 安卓游戏下载平台',
     description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。',
     images: [
       {
         url: '/og-image.png',
         width: 1200,
         height: 630,
-        alt: 'GameHub Logo'
+        alt: '游戏世界 GameWorld Logo'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'GameHub - 安卓游戏下载平台',
+    title: '游戏世界 - GameWorld - 安卓游戏下载平台',
     description: '探索超过10,000款精品安卓游戏，免费下载、高速下载、官方正版。',
     images: ['/og-image.png'],
-    creator: '@gamehub'
+    creator: '@游戏世界GameWorld'
   },
   robots: {
     index: true,
@@ -75,21 +77,24 @@ const Layout = ({ children }) => {
       </head>
       <body>
         <ThemeProvider>
-          <GlobalLoader />
-          <ToastContainer />
-          <div className="min-h-screen flex flex-col">
-            <main className="flex-1">
-              {children}
-            </main>
-            <footer className="glass border-t border-white/10 mt-auto">
-              <div className="container mx-auto py-8 px-6">
-                <div className="text-center">
-                  <p className="text-muted text-sm">© 2026 GameHub. 保留所有权利.</p>
-                  <p className="text-muted/60 text-xs mt-2">打造最好的游戏下载体验</p>
+          <UserProvider>
+            <GlobalLoader />
+            <ToastContainer />
+            <div className="min-h-screen flex flex-col">
+              <AnnouncementBar />
+              <main className="flex-1">
+                {children}
+              </main>
+              <footer className="glass border-t border-white/10 mt-auto">
+                <div className="container mx-auto py-8 px-6">
+                  <div className="text-center">
+          <p className="text-muted text-sm">© 2026 游戏世界 GameWorld. 保留所有权利.</p>
+          <p className="text-muted/60 text-xs mt-2">打造最好的游戏下载体验</p>
+        </div>
                 </div>
-              </div>
-            </footer>
-          </div>
+              </footer>
+            </div>
+          </UserProvider>
         </ThemeProvider>
       </body>
     </html>

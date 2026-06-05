@@ -52,7 +52,8 @@ function validateHeaders(request) {
   const contentType = request.headers.get('content-type')
   
   if (request.method === 'POST' || request.method === 'PUT' || request.method === 'PATCH') {
-    if (!contentType || !contentType.includes('application/json')) {
+    // 允许文件上传的multipart/form-data请求
+    if (!contentType || (!contentType.includes('application/json') && !contentType.includes('multipart/form-data'))) {
       return false
     }
   }

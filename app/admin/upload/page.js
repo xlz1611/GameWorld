@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Upload as UploadIcon, Image, FileText, Package, Calendar, Shield, Gamepad2, Zap, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload as UploadIcon, Image, FileText, Package, Calendar, Shield, Gamepad2, Zap, CheckCircle, AlertCircle } from 'lucide-react'
 
-const UploadPage = () => {
+const UploadContent = () => {
+  const categories = ['动作游戏', '角色扮演', '休闲益智', '策略游戏', '体育竞技', '模拟经营', '冒险解谜']
+
   const [formData, setFormData] = useState({
     name: '',
     packageName: '',
@@ -17,6 +19,11 @@ const UploadPage = () => {
   const [iconFile, setIconFile] = useState(null)
   const [apkFile, setApkFile] = useState(null)
   const [message, setMessage] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadStep, setUploadStep] = useState('') // 'icon' | 'apk' | 'saving'
+  const [isUploading, setIsUploading] = useState(false)
+  const iconInputRef = useRef(null)
+  const apkInputRef = useRef(null)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -34,6 +41,22 @@ const UploadPage = () => {
     }
   }
 
+  const uploadToBlob = async (file, pathname) => {
+    const { upload } = await import('@vercel/blob/client')
+    const token = localStorage.getItem('token')
+
+    const blob = await upload(pathname, file, {
+      access: 'public',
+      handleUploadUrl: '/api/admin/upload/url',
+      clientPayload: JSON.stringify({ token }),
+      onUploadProgress: (progress) => {
+        setUploadProgress(progress)
+      },
+    })
+
+    return blob.url
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -42,60 +65,95 @@ const UploadPage = () => {
       return
     }
 
-    if (!formData.name || !formData.packageName || !formData.description || 
+    if (!formData.name || !formData.packageName || !formData.description ||
         !formData.category || !formData.version || !formData.fileSize) {
       setMessage('请填写所有必填字段')
       return
     }
 
-    const form = new FormData()
-    form.append('name', formData.name)
-    form.append('packageName', formData.packageName)
-    form.append('description', formData.description)
-    form.append('category', formData.category)
-    form.append('version', formData.version)
-    form.append('fileSize', formData.fileSize)
-    if (iconFile) {
-      form.append('icon', iconFile)
+    if (iconFile && iconFile.size > 10 * 1024 * 1024) {
+      setMessage('图标文件大小不能超过10MB')
+      return
     }
-    form.append('apk', apkFile)
+
+    setIsUploading(true)
+    setUploadProgress(0)
+    setMessage('')
 
     try {
+      // 步骤1: 上传图标
+      let iconUrl = '/favicon-16x16.png'
+      if (iconFile) {
+        setUploadStep('icon')
+        const iconExt = iconFile.name.split('.').pop()
+        const iconPath = `icons/${Date.now()}_icon.${iconExt}`
+        iconUrl = await uploadToBlob(iconFile, iconPath)
+      }
+
+      // 步骤2: 上传APK
+      setUploadStep('apk')
+      setUploadProgress(0)
+      const apkExt = apkFile.name.split('.').pop()
+      const apkPath = `games/${Date.now()}_game.${apkExt}`
+      const apkUrl = await uploadToBlob(apkFile, apkPath)
+
+      // 步骤3: 保存游戏记录
+      setUploadStep('saving')
+      setUploadProgress(100)
+
+      const token = localStorage.getItem('token')
       const res = await fetch('/api/admin/upload', {
         method: 'POST',
-        body: form
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          iconUrl,
+          apkUrl
+        })
       })
 
-      const result = await res.json()
-
-      if (res.ok) {
-        setMessage('上传成功！')
-        setFormData({
-          name: '',
-          packageName: '',
-          description: '',
-          category: '',
-          version: '',
-          fileSize: ''
-        })
-        setIconFile(null)
-        setApkFile(null)
-      } else {
-        setMessage(result.error || '上传失败，请重试')
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.error || '保存失败')
       }
+
+      setMessage('上传成功！')
+      setFormData({
+        name: '',
+        packageName: '',
+        description: '',
+        category: '',
+        version: '',
+        fileSize: ''
+      })
+      setIconFile(null)
+      setApkFile(null)
+      if (iconInputRef.current) iconInputRef.current.value = ''
+      if (apkInputRef.current) apkInputRef.current.value = ''
     } catch (error) {
-      console.error('上传失败:', error)
-      setMessage('网络错误，请检查连接后重试')
+      setMessage(error.message || '上传失败，请重试')
+    } finally {
+      setIsUploading(false)
+      setUploadStep('')
+      setUploadProgress(0)
+    }
+  }
+
+  const getStepText = () => {
+    switch (uploadStep) {
+      case 'icon': return '正在上传图标...'
+      case 'apk': return '正在上传APK文件...'
+      case 'saving': return '正在保存游戏数据...'
+      default: return '上传中...'
     }
   }
 
   return (
     <div className="relative z-10">
-      <Link href="/admin" className="inline-flex items-center text-primary hover:text-primary-hover transition-colors mb-10 font-semibold text-lg group">
-        <ArrowLeft className="h-6 w-6 mr-2 group-hover:-translate-x-1 transition-transform" />
-        返回仪表盘
-      </Link>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-primary to-primary-hover rounded-3xl mb-8 glow floating">
@@ -170,15 +228,20 @@ const UploadPage = () => {
 
             <div>
               <label className="block text-sm font-semibold mb-3 text-foreground/80">分类</label>
-              <input
-                type="text"
-                name="category"
-                className="input w-full"
-                placeholder="例如: 动作游戏"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-              />
+              <div className="relative group">
+                <select
+                  name="category"
+                  className="input w-full pl-4"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  required
+                >
+                  <option value="">请选择分类</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>
@@ -198,9 +261,9 @@ const UploadPage = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold mb-3 text-foreground/80">文件大小</label>
+              <label className="block text-sm font-semibold mb-3 text-white">文件大小</label>
               <div className="relative group">
-                <Shield className="absolute left-5 top-4 h-5 w-5 text-foreground/40 group-focus-within:text-primary transition-colors" />
+                <Shield className="absolute left-5 top-4 h-5 w-5 text-white/40 group-focus-within:text-primary transition-colors" />
                 <input
                   type="text"
                   name="fileSize"
@@ -220,6 +283,7 @@ const UploadPage = () => {
                 <input
                   type="file"
                   accept="image/*"
+                  ref={iconInputRef}
                   className="input w-full pl-14"
                   onChange={(e) => handleFileChange(e, 'icon')}
                 />
@@ -239,6 +303,7 @@ const UploadPage = () => {
                 <input
                   type="file"
                   accept=".apk"
+                  ref={apkInputRef}
                   className="input w-full pl-14"
                   onChange={(e) => handleFileChange(e, 'apk')}
                   required
@@ -257,11 +322,30 @@ const UploadPage = () => {
             <Link href="/admin" className="btn btn-secondary">
               取消
             </Link>
-            <button type="submit" className="btn btn-primary flex items-center space-x-3 glow">
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="btn btn-primary flex items-center space-x-3 glow disabled:opacity-60 disabled:cursor-not-allowed"
+            >
               <UploadIcon className="h-6 w-6" />
-              <span>上传游戏</span>
+              <span>{isUploading ? getStepText() : '上传游戏'}</span>
             </button>
           </div>
+
+          {isUploading && (
+            <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-white text-sm">{getStepText()}</span>
+                <span className="text-brand text-sm font-semibold">{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-[#334155] rounded-full h-3 overflow-hidden">
+                <div
+                  className="bg-brand h-3 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
         </form>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -288,8 +372,9 @@ const UploadPage = () => {
           </div>
         </div>
       </div>
+      </div>
     </div>
   )
 }
 
-export default UploadPage
+export default UploadContent

@@ -1,0 +1,16 @@
+{
+  "name": "GameHub - 游戏世界",
+  "short_name": "GameHub",
+  "description": "发现、下载、畅玩 - 您的专属游戏天堂",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#22d3ee",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}

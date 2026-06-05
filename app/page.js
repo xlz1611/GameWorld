@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Gamepad2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
@@ -12,6 +12,13 @@ const GameCardSkeleton = dynamic(() => import('./components/ui/GameCardSkeleton'
 const Pagination = dynamic(() => import('./components/ui/Pagination'), { ssr: false })
 const TrendingGames = dynamic(() => import('./components/features/TrendingGames'), { ssr: false })
 
+const CATEGORIES = ['全部', '动作游戏', '角色扮演', '休闲益智', '策略游戏', '体育竞技', '模拟经营', '冒险解谜']
+
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input
+  return input.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))
+}
+
 const Home = () => {
   const [games, setGames] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -22,79 +29,62 @@ const Home = () => {
   const [searchHistory, setSearchHistory] = useState([])
   const [favorites, setFavorites] = useState([])
   const [downloadHistory, setDownloadHistory] = useState([])
-
-  const categories = ['全部', '动作游戏', '角色扮演', '休闲益智', '策略游戏', '体育竞技', '模拟经营', '冒险解谜', '其它']
-
   const [error, setError] = useState(null)
+  const abortRef = useRef(null)
 
-  // 获取游戏数据（带缓存）
-  const fetchGames = useCallback(async () => {
+  const loadGames = useCallback(async () => {
+    if (abortRef.current) abortRef.current.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+
     setError(null)
     try {
-      // 检查localStorage缓存
       let cachedGames = null
       let cacheExpiry = null
       const now = Date.now()
-      const cacheTime = 5 * 60 * 1000 // 5分钟缓存
+      const cacheTime = 5 * 60 * 1000
 
       try {
         cachedGames = localStorage.getItem('cachedGames')
         cacheExpiry = localStorage.getItem('cacheExpiry')
-      } catch (storageError) {
-        console.warn('LocalStorage不可用，跳过缓存检查:', storageError)
-      }
+      } catch (storageError) {}
 
       if (cachedGames && cacheExpiry && now < parseInt(cacheExpiry)) {
         try {
-          // 使用缓存数据
           const data = JSON.parse(cachedGames)
           setGames(data)
-          console.log('使用缓存数据')
-        } catch (parseError) {
-          console.error('解析缓存数据失败:', parseError)
-          // 缓存解析失败，继续从API获取
-        }
+        } catch (parseError) {}
       }
 
-      // 从API获取数据
-      const res = await fetch('/api/games')
+      const res = await fetch('/api/games', { signal: controller.signal })
       if (res.ok) {
         const data = await res.json()
         setGames(Array.isArray(data) ? data : [])
-        
-        // 更新缓存
         try {
           localStorage.setItem('cachedGames', JSON.stringify(data))
           localStorage.setItem('cacheExpiry', (now + cacheTime).toString())
-          console.log('更新缓存数据')
-        } catch (storageError) {
-          console.warn('LocalStorage不可用，跳过缓存更新:', storageError)
-        }
+        } catch (storageError) {}
       } else {
         throw new Error(`API请求失败: ${res.status}`)
       }
     } catch (error) {
-      console.error('获取游戏列表失败:', error)
-      setError('获取游戏列表失败，请稍后重试')
-      setGames([])
+      if (error.name !== 'AbortError') {
+        console.error('获取游戏列表失败:', error)
+        setError('获取游戏列表失败，请稍后重试')
+        setGames([])
+      }
     } finally {
       setIsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchGames()
-  }, [fetchGames])
+    loadGames()
+    return () => {
+      if (abortRef.current) abortRef.current.abort()
+    }
+  }, [loadGames])
 
-  const sanitizeInput = (input) => {
-    // 简单的HTML转义，防止XSS攻击
-    if (typeof input !== 'string') return input
-    const div = document.createElement('div')
-    div.textContent = input
-    return div.innerHTML
-  }
-
-  // 处理搜索
   const handleSearch = useCallback((term) => {
     const sanitizedTerm = sanitizeInput(term)
     setSearchTerm(sanitizedTerm)
@@ -192,18 +182,12 @@ const Home = () => {
 
     // 分类过滤
     if (selectedCategory !== '全部') {
-      if (selectedCategory === '其它') {
-        // 过滤出不在预定义类别列表中的游戏
-        const predefinedCategories = categories.filter(cat => cat !== '全部' && cat !== '其它')
-        filtered = filtered.filter(game => !predefinedCategories.includes(game.category))
-      } else {
-        // 正常的类别过滤
-        filtered = filtered.filter(game => game.category === selectedCategory)
-      }
+      // 正常的类别过滤
+      filtered = filtered.filter(game => game.category === selectedCategory)
     }
 
     return filtered
-  }, [searchTerm, selectedCategory, games, categories])
+  }, [searchTerm, selectedCategory, games])
 
   // 重置到第一页当搜索或分类改变时
   useEffect(() => {
@@ -245,23 +229,16 @@ const Home = () => {
       />
 
       {/* 英雄区域 */}
-      <Hero 
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        handleSearch={handleSearch}
-      />
+      <Hero />
 
-      <section className="max-w-7xl mx-auto px-6 py-12">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* 错误提示 */}
         {error && (
-          <div className="mb-8 p-4 rounded-xl bg-red-900/30 border border-red-700/50 text-red-400 flex items-center justify-between error-message">
-            <span>{error}</span>
+          <div className="mb-6 p-4 rounded-xl bg-red-900/30 border border-red-700/50 text-red-400 flex items-center justify-between error-message">
+            <span className="text-sm sm:text-base">{error}</span>
             <button 
-              onClick={() => {
-                setError(null)
-                fetchGames()
-              }}
-              className="text-red-300 hover:text-red-200 transition-colors btn"
+              onClick={loadGames}
+              className="text-red-300 hover:text-red-200 transition-colors btn px-3 py-1"
             >
               重试
             </button>
@@ -269,8 +246,8 @@ const Home = () => {
         )}
 
         {/* 分类选择 */}
-        <div className="category-pills mb-12">
-          {categories.map((category) => (
+        <div className="category-pills mb-8">
+          {CATEGORIES.map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
@@ -281,31 +258,31 @@ const Home = () => {
           ))}
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* 游戏列表 */}
           <div className="flex-1">
             {isLoading ? (
               <div className="game-grid">
-                {Array.from({ length: 10 }).map((_, index) => (
+                {Array.from({ length: 6 }).map((_, index) => (
                   <GameCardSkeleton key={index} />
                 ))}
               </div>
             ) : filteredGamesMemo.length === 0 ? (
-              <div className="text-center py-24">
-                <div className="inline-flex items-center justify-center mb-8">
-                  <div className="w-32 h-32 bg-[#1E293B] rounded-3xl flex items-center justify-center">
-                    <Gamepad2 className="w-20 h-20 text-muted" />
+              <div className="text-center py-16 sm:py-24">
+                <div className="inline-flex items-center justify-center mb-6 sm:mb-8">
+                  <div className="w-24 sm:w-32 h-24 sm:h-32 bg-[#1E293B] rounded-3xl flex items-center justify-center">
+                    <Gamepad2 className="w-12 sm:w-20 h-12 sm:h-20 text-muted" />
                   </div>
                 </div>
-                <p className="text-muted text-2xl font-semibold mb-3">暂无游戏</p>
-                <p className="text-muted/60 text-lg">{searchTerm ? '没有找到匹配的游戏' : '敬请期待更多精彩游戏'}</p>
+                <p className="text-muted text-xl sm:text-2xl font-semibold mb-3">暂无游戏</p>
+                <p className="text-muted/60 text-sm sm:text-lg">{searchTerm ? '没有找到匹配的游戏' : '敬请期待更多精彩游戏'}</p>
                 {searchTerm && (
                   <button 
                     onClick={() => {
                       setSearchTerm('')
                       setSelectedCategory('全部')
                     }}
-                    className="mt-6 px-6 py-2 bg-brand text-[#0F172A] rounded-lg font-semibold hover:bg-brand/90 transition-colors"
+                    className="mt-4 sm:mt-6 px-4 sm:px-6 py-2 bg-brand text-[#0F172A] rounded-lg font-semibold hover:bg-brand/90 transition-colors"
                   >
                     清除筛选
                   </button>
@@ -337,7 +314,7 @@ const Home = () => {
           </div>
 
           {/* 热门排行榜 */}
-          <aside className="sidebar w-80 shrink-0">
+          <aside className="sidebar w-full lg:w-80 shrink-0 order-first lg:order-last">
             <TrendingGames 
               games={trendingGames}
               isLoading={isLoading}

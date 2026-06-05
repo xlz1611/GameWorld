@@ -44,7 +44,7 @@ const Toast = ({ message, type = 'info', duration = 3000, onClose }) => {
           setIsVisible(false)
           setTimeout(onClose, 300)
         }}
-        className="text-muted hover:text-white transition-colors"
+        className="text-white hover:text-white transition-colors"
         aria-label="关闭通知"
       >
         <X className="w-4 h-4" />

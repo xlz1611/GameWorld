@@ -7,8 +7,9 @@
   --brand-hover: #32C470;
   --bg-main: #0F172A;
   --bg-card: #1E293B;
-  --text-main: #F1F5F9;
-  --text-muted: #FFFFFF;
+  --text-main: #FFFFFF;
+  --text-muted: #F1F5F9;
+  --text-muted-light: #CBD5E1;
   --border-color: #334155;
   --radius-ui: 1rem;
   --radius-lg: 1.5rem;
@@ -190,9 +191,10 @@ body::before {
   }
   
   .category-pills {
-    @apply flex gap-3 overflow-x-auto pb-4;
+    @apply flex gap-3 overflow-x-auto pb-4 whitespace-nowrap;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
   }
   
   .category-pills::-webkit-scrollbar {
@@ -311,6 +313,10 @@ body::before {
     box-shadow: 0 8px 24px rgba(61, 220, 132, 0.2);
   }
   
+  .input {
+    @apply bg-[#1E293B] border-2 border-[#334155] rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-brand transition-colors;
+  }
+  
   /* 导航链接动画 */
   nav a {
     @apply relative transition-colors duration-300 px-3 py-2;
@@ -384,7 +390,7 @@ body::before {
     
     /* 间距优化 */
     .hero-section {
-      @apply py-20;
+      @apply py-20 pt-32;
     }
     
     .game-grid {
@@ -393,7 +399,7 @@ body::before {
     
     /* 容器间距优化 */
     section {
-      @apply px-4 py-8;
+      @apply px-4 py-8 pt-32;
     }
     
     /* 移动端滚动优化 */
@@ -407,6 +413,79 @@ body::before {
       -moz-user-select: none;
       -ms-user-select: none;
       user-select: none;
+    }
+    
+    /* 移动端顶部工具栏适配 */
+    .mobile-header {
+      @apply fixed top-0 left-0 right-0 z-40 bg-[#171a21] border-b border-[#2e3136] p-3 flex items-center justify-between;
+    }
+    
+    /* 移动端底部导航栏适配 */
+    .mobile-fab {
+      @apply fixed bottom-0 left-0 right-0 z-50;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(61, 220, 132, 0.2);
+      padding: 16px 20px;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* 移动端模态框适配 */
+    .mobile-modal {
+      @apply fixed inset-0 bg-black/80 z-50 flex flex-col;
+    }
+    
+    .mobile-modal-header {
+      @apply bg-[#2a2d31] border-b border-[#444] p-4 flex items-center justify-between;
+    }
+    
+    .mobile-modal-content {
+      @apply flex-1 overflow-y-auto;
+    }
+    
+    .mobile-modal-footer {
+      @apply bg-[#2a2d31] border-t border-[#444] p-4;
+    }
+    
+    /* 移动端游戏卡片适配 */
+    .game-card {
+      @apply mb-4;
+    }
+    
+    /* 移动端表单适配 */
+    .mobile-form {
+      @apply p-4;
+    }
+    
+    .mobile-form-group {
+      @apply mb-4;
+    }
+    
+    .mobile-form-label {
+      @apply block text-sm font-semibold mb-2 text-white;
+    }
+    
+    .mobile-form-input {
+      @apply w-full bg-[#2A3447] border border-[#334155] rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-brand transition-colors;
+    }
+    
+    /* 移动端按钮适配 */
+    .mobile-btn {
+      @apply w-full py-3 rounded-lg font-semibold transition-colors;
+    }
+    
+    .mobile-btn-primary {
+      @apply bg-brand text-[#0F172A] hover:bg-[#32C470];
+    }
+    
+    .mobile-btn-secondary {
+      @apply bg-[#334155] text-white hover:bg-[#475569];
+    }
+    
+    /* 移动端搜索框适配 */
+    .mobile-search {
+      @apply w-full bg-[#2a2d31] border border-[#444] rounded px-4 py-2 text-sm text-white placeholder-gray-400;
     }
   }
   

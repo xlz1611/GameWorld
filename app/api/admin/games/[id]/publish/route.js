@@ -1,6 +1,12 @@
 import prisma from '../../../../lib/prisma'
+import { verifyAdmin, adminResponse } from '../../../../lib/adminAuth'
 
 export async function PUT(request, { params }) {
+  const auth = await verifyAdmin(request)
+  if (!auth.verified) {
+    return adminResponse(auth.error, auth.status)
+  }
+
   const { id } = params
   const { isPublished } = await request.json()
 

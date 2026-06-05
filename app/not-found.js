@@ -18,7 +18,7 @@ export default function NotFound() {
             页面未找到
           </h2>
           
-          <p className="text-muted mb-8">
+          <p className="text-white mb-8">
             抱歉，您访问的页面不存在或已被移除。
           </p>
 
@@ -41,7 +41,7 @@ export default function NotFound() {
           </div>
 
           <div className="mt-8 pt-8 border-t border-[#334155]">
-            <p className="text-sm text-muted mb-4">热门分类</p>
+            <p className="text-sm text-white mb-4">热门分类</p>
             <div className="flex flex-wrap justify-center gap-2">
               {['动作游戏', '角色扮演', '休闲益智', '策略游戏'].map((category) => (
                 <Link

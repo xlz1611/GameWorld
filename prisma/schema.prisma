@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,19 +7,75 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  avatar    String?
+  role      String   @default("user")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  comments  Comment[]
+
+  @@index([role])
+  @@index([email])
+}
+
 model Game {
-  id           Int      @id @default(autoincrement())
-  name         String
-  packageName  String
-  description  String
-  category     String
-  iconUrl      String
-  apkUrl       String
-  version      String
-  fileSize     String
-  isPublished  Boolean  @default(false)
-  downloadCount Int     @default(0)
-  rating       Float    @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            Int       @id @default(autoincrement())
+  name          String
+  packageName   String
+  description   String
+  category      String
+  iconUrl       String
+  apkUrl        String
+  version       String
+  fileSize      String
+  isPublished   Boolean   @default(false)
+  downloadCount Int       @default(0)
+  rating        Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  comments      Comment[]
+
+  @@index([isPublished])
+  @@index([category])
+  @@index([isPublished, category])
+  @@index([downloadCount])
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  rating    Int      @default(5)
+  userId    Int
+  gameId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gameId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Announcement {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  type      String   @default("info")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([createdAt])
+}
+
+model SiteSetting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
 }

@@ -26,7 +26,7 @@ export default function GameNotFound() {
               游戏不存在
             </h1>
             
-            <p className="text-muted mb-8">
+            <p className="text-white mb-8">
               抱歉，您要找的游戏不存在或已被下架。
             </p>
 
@@ -49,7 +49,7 @@ export default function GameNotFound() {
             </div>
 
             <div className="mt-8 pt-8 border-t border-[#334155]">
-              <p className="text-sm text-muted mb-4">推荐游戏</p>
+              <p className="text-sm text-white mb-4">推荐游戏</p>
               <div className="grid grid-cols-3 gap-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="aspect-square bg-[#0F172A] rounded-xl animate-pulse"></div>

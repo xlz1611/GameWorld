@@ -57,6 +57,10 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
+    // 增加API路由的请求大小限制
+    serverActions: {
+      bodySizeLimit: '500mb',
+    },
   },
   webpack: (config) => {
     config.watchOptions = {

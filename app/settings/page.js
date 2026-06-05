@@ -1,15 +1,36 @@
 'use client'
 
 import { useTheme } from '../lib/ThemeContext'
-import { Palette, Check, ArrowLeft, Settings as SettingsIcon, Heart, History, Trash2 } from 'lucide-react'
+import { useUser } from '../lib/UserContext'
+import { Palette, Check, ArrowLeft, Settings as SettingsIcon, Heart, History, Trash2, User, Camera, Save, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
 const Settings = () => {
   const { currentTheme, themes, changeTheme } = useTheme()
+  const { user, isLoggedIn, updateUser } = useUser()
   const [games, setGames] = useState([])
   const [favorites, setFavorites] = useState([])
   const [downloadHistory, setDownloadHistory] = useState([])
+  const [userName, setUserName] = useState('')
+  const [avatar, setAvatar] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [message, setMessage] = useState('')
+
+  // 预设头像
+  const presetAvatars = [
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%201&image_size=square',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%202&image_size=square',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%203&image_size=square',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%204&image_size=square',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%205&image_size=square',
+    'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=user%20avatar%20profile%20picture%206&image_size=square'
+  ]
+
+  // 选择预设头像
+  const selectPresetAvatar = (avatarUrl) => {
+    setAvatar(avatarUrl)
+  }
 
   // 获取游戏数据
   useEffect(() => {
@@ -30,15 +51,30 @@ const Settings = () => {
     // 加载收藏
     const savedFavorites = localStorage.getItem('favorites')
     if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites))
+      try {
+        setFavorites(JSON.parse(savedFavorites))
+      } catch {
+        localStorage.removeItem('favorites')
+      }
     }
 
-    // 加载下载历史
     const savedDownloadHistory = localStorage.getItem('downloadHistory')
     if (savedDownloadHistory) {
-      setDownloadHistory(JSON.parse(savedDownloadHistory))
+      try {
+        setDownloadHistory(JSON.parse(savedDownloadHistory))
+      } catch {
+        localStorage.removeItem('downloadHistory')
+      }
     }
   }, [])
+
+  // 当用户信息变化时更新状态
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name || '')
+      setAvatar(user.avatar || null)
+    }
+  }, [user])
 
   // 清除收藏
   const clearFavorites = () => {
@@ -70,6 +106,81 @@ const Settings = () => {
     })
   }
 
+  // 处理头像上传
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // 这里可以添加文件类型和大小验证
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatar(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // 保存用户信息
+  const saveUserInfo = async () => {
+    if (!userName.trim()) {
+      setMessage('用户名不能为空')
+      return
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setMessage('登录已过期，请重新登录')
+        return
+      }
+
+      const res = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: userName,
+          avatar: avatar
+        })
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        const updatedUser = {
+          ...user,
+          name: data.name,
+          avatar: data.avatar
+        }
+
+        if (updateUser) {
+          updateUser(updatedUser)
+        }
+
+        setIsEditing(false)
+        setMessage('个人信息更新成功')
+      } else {
+        setMessage(data.error || '更新失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('更新用户信息失败:', error)
+      setMessage('网络错误，请稍后重试')
+    }
+
+    setTimeout(() => {
+      setMessage('')
+    }, 3000)
+  }
+
+  // 取消编辑
+  const cancelEdit = () => {
+    setUserName(user?.name || '')
+    setAvatar(user?.avatar || null)
+    setIsEditing(false)
+    setMessage('')
+  }
+
   // 获取收藏的游戏
   const favoriteGames = games.filter(game => favorites.includes(game.id))
 
@@ -95,6 +206,157 @@ const Settings = () => {
       </nav>
 
       <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* 用户个人信息设置 */}
+        <div className="glow-card p-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center">
+              <User className="w-6 h-6 text-[#0F172A]" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">个人信息</h1>
+              <p className="text-white text-sm">修改您的用户名和头像</p>
+            </div>
+          </div>
+
+          {isLoggedIn ? (
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              {/* 头像部分 */}
+              <div className="flex flex-col items-center">
+                <div className="relative mb-4">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-[#334155]">
+                    {avatar ? (
+                      <img 
+                        src={avatar} 
+                        alt="用户头像" 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-[#1E293B] flex items-center justify-center">
+                        <User className="w-16 h-16 text-white/50" />
+                      </div>
+                    )}
+                  </div>
+                  {isEditing && (
+                    <label className="absolute bottom-0 right-0 w-10 h-10 bg-brand rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-hover transition-colors">
+                      <Camera className="w-5 h-5 text-[#0F172A]" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleAvatarChange}
+                      />
+                    </label>
+                  )}
+                </div>
+                {isEditing && (
+                  <div className="w-full">
+                    <p className="text-sm text-white/60 text-center mb-4">选择头像</p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {presetAvatars.map((presetAvatar, index) => (
+                        <div 
+                          key={index} 
+                          className={`w-12 h-12 rounded-full overflow-hidden border-2 cursor-pointer transition-all ${avatar === presetAvatar ? 'border-brand scale-110' : 'border-[#334155] hover:border-brand'}`}
+                          onClick={() => selectPresetAvatar(presetAvatar)}
+                        >
+                          <img 
+                            src={presetAvatar} 
+                            alt={`预设头像 ${index + 1}`} 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/60 text-center mt-4">或点击上方上传自定义头像</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 个人信息部分 */}
+              <div className="flex-1 w-full">
+                {message && (
+                  <div className={`mb-4 p-3 rounded-lg ${message.includes('成功') ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                    {message}
+                  </div>
+                )}
+                
+                {/* 编辑按钮 */}
+                {!isEditing && (
+                  <div className="mb-6 flex justify-end">
+                    <button 
+                      onClick={() => setIsEditing(true)}
+                      className="px-6 py-2 bg-brand text-[#0F172A] rounded-lg font-semibold hover:bg-brand-hover transition-colors flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>编辑个人信息</span>
+                    </button>
+                  </div>
+                )}
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-white">用户名</label>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full bg-[#1E293B] border-2 border-[#334155] rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-brand transition-colors"
+                        placeholder="请输入用户名"
+                      />
+                    ) : (
+                      <div className="p-4 bg-[#1E293B] border border-[#334155] rounded-lg">
+                        <span className="text-white">{user?.name || '未设置'}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold mb-2 text-white">邮箱</label>
+                    <div className="p-4 bg-[#1E293B] border border-[#334155] rounded-lg">
+                      <span className="text-white">{user?.email || '未设置'}</span>
+                    </div>
+                  </div>
+
+                  {isEditing && (
+                    <div className="flex space-x-4 pt-4">
+                      <button 
+                        onClick={saveUserInfo}
+                        className="flex-1 px-4 py-3 bg-brand text-[#0F172A] rounded-lg font-semibold hover:bg-brand-hover transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Save className="w-4 h-4" />
+                        <span>保存</span>
+                      </button>
+                      <button 
+                        onClick={cancelEdit}
+                        className="flex-1 px-4 py-3 bg-[#1E293B] border border-[#334155] text-white rounded-lg font-semibold hover:bg-[#0F172A] transition-colors flex items-center justify-center gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>取消</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center mb-4">
+                <div className="w-24 h-24 bg-[#1E293B] rounded-3xl flex items-center justify-center">
+                  <User className="w-12 h-12 text-white/50" />
+                </div>
+              </div>
+              <p className="text-white text-lg font-semibold mb-4">请先登录</p>
+              <p className="text-white/60 text-sm mb-6">登录后可以修改个人信息</p>
+              <Link 
+                href="/auth/login"
+                className="px-6 py-3 bg-brand text-[#0F172A] rounded-lg font-semibold hover:bg-brand-hover transition-colors"
+              >
+                去登录
+              </Link>
+            </div>
+          )}
+        </div>
+
         <div className="glow-card p-8 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 bg-brand rounded-xl flex items-center justify-center">
@@ -102,7 +364,7 @@ const Settings = () => {
                     </div>
             <div>
               <h1 className="text-2xl font-bold text-white">主题设置</h1>
-              <p className="text-muted text-sm">选择您喜欢的颜色主题</p>
+              <p className="text-white text-sm">选择您喜欢的颜色主题</p>
             </div>
           </div>
 
@@ -128,7 +390,7 @@ const Settings = () => {
                   
                   <div className="flex-1 text-left">
                     <h3 className="text-lg font-bold text-white mb-1">{theme.name}</h3>
-                    <div className="flex items-center gap-2 text-xs text-muted mb-3">
+                    <div className="flex items-center gap-2 text-xs text-white mb-3">
                       <div 
                         className="w-4 h-4 rounded"
                         style={{ backgroundColor: theme.colors.bgMain }}
@@ -141,7 +403,7 @@ const Settings = () => {
                       <span>卡片</span>
                     </div>
                     
-                    <div className="flex items-center gap-2 text-xs text-muted">
+                    <div className="flex items-center gap-2 text-xs text-white">
                       <span>圆角:</span>
                       <span className="text-white">{theme.colors.radiusUi}</span>
                     </div>
@@ -238,11 +500,11 @@ const Settings = () => {
             <div className="text-center py-12">
               <div className="inline-flex items-center justify-center mb-4">
                 <div className="w-24 h-24 bg-[#1E293B] rounded-3xl flex items-center justify-center">
-                  <Heart className="w-12 h-12 text-muted" />
+                  <Heart className="w-12 h-12 text-white" />
                 </div>
               </div>
-              <p className="text-muted text-lg font-semibold mb-2">暂无收藏</p>
-              <p className="text-muted/60 text-sm">浏览游戏时点击收藏按钮添加</p>
+              <p className="text-white text-lg font-semibold mb-2">暂无收藏</p>
+              <p className="text-white/60 text-sm">浏览游戏时点击收藏按钮添加</p>
             </div>
           ) : (
             <div className="space-y-4">
