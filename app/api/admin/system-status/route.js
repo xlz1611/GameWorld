@@ -1,4 +1,3 @@
-import { list } from '@vercel/blob'
 import prisma from '../../lib/prisma'
 import { verifyAdmin, adminResponse } from '../../lib/adminAuth'
 
@@ -8,6 +7,21 @@ function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+async function listBlobs() {
+  const token = process.env.BLOB_READ_WRITE_TOKEN
+  if (!token) return { blobs: [] }
+
+  try {
+    const res = await fetch('https://blob.vercel.sh/api/list', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) return { blobs: [] }
+    return await res.json()
+  } catch {
+    return { blobs: [] }
+  }
 }
 
 export async function GET(request) {
@@ -25,8 +39,10 @@ export async function GET(request) {
 
   let storageBytes = 0
   try {
-    const blobs = await list()
-    storageBytes = blobs.blobs.reduce((total, blob) => total + blob.size, 0)
+    const blobData = await listBlobs()
+    if (blobData.blobs && Array.isArray(blobData.blobs)) {
+      storageBytes = blobData.blobs.reduce((total, blob) => total + (blob.size || 0), 0)
+    }
   } catch (error) {
     console.error('获取存储信息失败:', error)
   }

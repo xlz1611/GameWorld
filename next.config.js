@@ -57,32 +57,9 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
-    // 增加API路由的请求大小限制
     serverActions: {
       bodySizeLimit: '500mb',
     },
-    // 外部化服务端包，避免 webpack 解析问题
-    serverExternalPackages: ['@vercel/blob', 'undici'],
-  },
-  webpack: (config, { isServer }) => {
-    // 客户端构建时完全排除 undici 和 @vercel/blob，避免现代 JS 语法解析失败
-    if (!isServer) {
-      config.externals = [
-        ...(config.externals || []),
-        { 'undici': 'commonjs undici', '@vercel/blob': 'commonjs @vercel/blob' },
-      ]
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        fs: false,
-        net: false,
-        tls: false,
-      }
-    }
-    config.watchOptions = {
-      poll: 1000,
-      aggregateTimeout: 300,
-    }
-    return config
   },
 }
 

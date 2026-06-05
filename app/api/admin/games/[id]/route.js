@@ -1,8 +1,27 @@
-import { del } from '@vercel/blob'
 import prisma from '../../../lib/prisma'
 import { verifyAdmin, adminResponse } from '../../../lib/adminAuth'
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024
+
+async function deleteBlob(url) {
+  const token = process.env.BLOB_READ_WRITE_TOKEN
+  if (!url || !token || !url.includes('blob.vercel-storage.com')) return
+
+  try {
+    // 从 URL 中提取 pathname: https://*.blob.vercelstorage.com/pathname
+    const urlObj = new URL(url)
+    // Vercel Blob URL 格式: https://<store-id>.public.blob.vercel-storage.com/<pathname>
+    // 或: https://<store-id>.blob.vercelstorage.com/<pathname>
+    const pathname = urlObj.pathname.replace(/^\//, '')
+
+    await fetch(`https://blob.vercel.sh/api/delete/${pathname}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch (e) {
+    console.error('删除Blob文件失败:', e)
+  }
+}
 
 export async function GET(request, { params }) {
   const auth = await verifyAdmin(request)
@@ -52,12 +71,8 @@ export async function DELETE(request, { params }) {
 
     if (game) {
       // 删除 Vercel Blob 中的文件
-      if (game.iconUrl && game.iconUrl.includes('blob.vercel-storage.com')) {
-        try { await del(game.iconUrl) } catch (e) { console.error('删除图标失败:', e) }
-      }
-      if (game.apkUrl && game.apkUrl.includes('blob.vercel-storage.com')) {
-        try { await del(game.apkUrl) } catch (e) { console.error('删除APK失败:', e) }
-      }
+      if (game.iconUrl) await deleteBlob(game.iconUrl)
+      if (game.apkUrl) await deleteBlob(game.apkUrl)
     }
 
     await prisma.game.delete({
